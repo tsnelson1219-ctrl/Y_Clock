@@ -14,7 +14,7 @@
             --bg: #0f0e0c; --gold: #d4a75b; --green: #4fac8d; --red: #ff3e3e;
             --grid: rgba(212, 167, 91, 0.15); --glow: drop-shadow(0 0 10px var(--green));
             --center-glow: drop-shadow(0 0 15px var(--gold)) drop-shadow(0 0 50px rgba(212, 167, 91, 0.5));
-            --trans: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            --trans: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         body.light-theme {
             --bg: #f1e7d0; --gold: #5d4037; --green: #2e5a4b; --red: #a93226;
@@ -22,16 +22,19 @@
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
 
-        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .lunar-footer, body.minimal-mode #gridLines, body.minimal-mode #activeSector { 
+        /* 模式隱藏邏輯 */
+        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #gridLines, body.minimal-mode #activeSector { 
             opacity: 0 !important; visibility: hidden !important; 
         }
 
-        /* V7.6 新增：軌道連線與內圈刻度 */
-        #hourOrbit, #innerHourMarkers, #orbitConnectors { opacity: 0; visibility: hidden; transition: var(--trans); }
-        body.minimal-mode #hourOrbit { opacity: 0.8; visibility: visible; }
-        body.minimal-mode #innerHourMarkers { opacity: 1; visibility: visible; }
-        body.minimal-mode #orbitConnectors { opacity: 0.3; visibility: visible; }
-        body.light-theme.minimal-mode #orbitConnectors { opacity: 0.2; }
+        /* 預覽模式隱藏實時組件 */
+        body.preview-mode .outer-ring, body.preview-mode #gridLines, body.preview-mode #activeSector,
+        body.preview-mode #hourMarkers, body.preview-mode #innerHourMarkers, body.preview-mode #orbitConnectors,
+        body.preview-mode #hourOrbit, body.preview-mode #timeLink, body.preview-mode #secondProgress,
+        body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot,
+        body.preview-mode #hourHandLine, body.preview-mode #minHandLine,
+        body.preview-mode #cb, body.preview-mode #ct
+        { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
 
         body { 
             background: var(--bg); color: var(--gold); display: flex; flex-direction: column; 
@@ -40,30 +43,46 @@
         }
 
         .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; }
-        .clock-wrapper:active { transform: scale(0.98); }
         svg { width: 100%; height: 100%; display: block; overflow: visible; }
         
         .center-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; pointer-events: none; width: 65%; transition: var(--trans); }
         .big-branch { font-size: clamp(32px, 14vmin, 75px); color: var(--green); filter: var(--glow); line-height: 1; margin-bottom: 12px; }
-        .date-row { font-size: clamp(10px, 2.9vmin, 16px); margin: 4px 0; opacity: 0.8; letter-spacing: 1px; }
-        .time-row { font-family: monospace; font-size: clamp(18px, 4.5vmin, 24px); font-weight: bold; margin: 6px 0; letter-spacing: 1px; }
-        .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.2vmin, 18px); font-weight: bold; margin-top: 4px; }
         
-        .lunar-footer { margin-top: 25px; padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 20px); letter-spacing: 2px; transition: var(--trans); pointer-events: none; }
-        .theme-switch { margin-top: 35px; display: flex; gap: 40px; transition: var(--trans); z-index: 20; position: relative; }
-        .btn { width: 30px; height: 30px; border-radius: 50%; border: 2.2px solid var(--gold); cursor: pointer; transition: var(--trans); opacity: 0.4; }
-        .btn.active { transform: scale(1.25); border-width: 4px; opacity: 1; }
+        .date-row { font-size: clamp(12px, 3.2vmin, 18px); margin: 6px 0; opacity: 0.9; letter-spacing: 1px; pointer-events: none; }
+        body.preview-mode .date-row { pointer-events: auto; cursor: cell; color: var(--green); text-decoration: underline; text-underline-offset: 4px; }
+        
+        .time-row { font-family: monospace; font-size: clamp(18px, 4.5vmin, 24px); font-weight: bold; margin: 6px 0; letter-spacing: 1px; }
+        .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.5vmin, 20px); font-weight: bold; margin: 6px 0; }
+        #st { font-weight:bold; margin-top:10px; font-size: clamp(16px, 4vmin, 22px); }
+        
+        .footer-container { display: flex; align-items: center; gap: 20px; margin-top: 25px; transition: var(--trans); z-index: 20; }
+        .lunar-footer { padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 20px); letter-spacing: 2px; text-align: center; min-width: 180px; user-select: none; cursor: pointer; }
+        
+        .nav-moon { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: var(--trans); opacity: 0.4; position: relative; overflow: hidden; }
+        .nav-moon:hover { opacity: 1; }
+        .nav-prev { background: linear-gradient(to right, var(--gold) 50%, transparent 50%); }
+        .nav-next { background: linear-gradient(to right, transparent 50%, var(--gold) 50%); }
 
-        #secondProgress { stroke: var(--gold); stroke-width: 1.8; fill: none; stroke-linecap: round; }
-        #hourHandLine, #minHandLine { stroke: var(--red); stroke-linecap: round; opacity: 0; transition: var(--trans); pointer-events: none; }
-        body.minimal-mode #hourHandLine, body.minimal-mode #minHandLine { opacity: 0.5; }
+        .theme-switch { margin-top: 35px; display: flex; justify-content: center; width: 100%; transition: var(--trans); z-index: 20; position: relative; }
+        .btn-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--gold); background: #0f0e0c; cursor: pointer; transition: var(--trans); opacity: 0.5; }
+        body.light-theme .btn-toggle { background: #f1e7d0; border-width: 4px; }
+
+        /* 向心線樣式 */
+        #hourHandLine, #minHandLine { stroke: var(--red); stroke-linecap: round; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
+        body.minimal-mode:not(.preview-mode) #hourHandLine, body.minimal-mode:not(.preview-mode) #minHandLine { opacity: 0.5 !important; }
         body.light-theme #hourHandLine, body.light-theme #minHandLine { stroke: var(--gold); }
 
+        #secondProgress { stroke: var(--gold); stroke-width: 1.8; fill: none; stroke-linecap: round; }
         #centerDot { fill: url(#starGradient); filter: var(--center-glow); opacity: 0; visibility: hidden; transition: var(--trans); pointer-events: none; }
         body.minimal-mode #centerDot { opacity: 1 !important; visibility: visible !important; }
         
-        /* 圓點動畫 */
-        #redHourDot, #redMinDot, #greenDot { transition: cx 0.6s cubic-bezier(0.4, 0, 0.2, 1), cy 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        #hourOrbit, #innerHourMarkers, #orbitConnectors { opacity: 0; visibility: hidden; transition: var(--trans); }
+        body.minimal-mode #hourOrbit { opacity: 0.8; visibility: visible; }
+        body.minimal-mode #innerHourMarkers { opacity: 1; visibility: visible; }
+        body.minimal-mode #orbitConnectors { opacity: 0.3; visibility: visible; }
+        
+        /* 移除坐標上的 transition 確保流暢 */
+        #redHourDot, #redMinDot, #greenDot { transition: opacity 0.5s; }
     </style>
 </head>
 <body class="dark">
@@ -72,60 +91,87 @@
     <svg viewBox="0 0 500 500">
         <defs>
             <radialGradient id="starGradient" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="white" />
-                <stop offset="35%" stop-color="white" />
-                <stop offset="100%" stop-color="var(--gold)" />
+                <stop offset="0%" stop-color="white" /><stop offset="35%" stop-color="white" /><stop offset="100%" stop-color="var(--gold)" />
             </radialGradient>
         </defs>
-        
         <g class="outer-ring">
-            <circle cx="250" cy="250" r="230" fill="none" stroke="var(--grid)" stroke-width="1"/> 
-            <circle cx="250" cy="250" r="175" fill="none" stroke="var(--grid)" stroke-width="1.5"/> 
+            <circle cx="250" cy="250" r="230" fill="none" stroke="var(--grid)" stroke-width="1"/><circle cx="250" cy="250" r="175" fill="none" stroke="var(--grid)" stroke-width="1.5"/>
         </g>
-        <circle cx="250" cy="250" r="120" fill="none" stroke="var(--grid)" stroke-width="1.2"/> 
-        
-        <circle id="hourOrbit" cx="250" cy="250" r="90" fill="none" stroke="var(--grid)" stroke-width="0.8"/> 
-        <g id="orbitConnectors"></g>
-        <g id="innerHourMarkers"></g>
-
-        <g id="gridLines"></g>
+        <circle cx="250" cy="250" r="120" fill="none" stroke="var(--grid)" stroke-width="1.2"/>
+        <circle id="hourOrbit" cx="250" cy="250" r="90" fill="none" stroke="var(--grid)" stroke-width="0.8"/>
+        <g id="orbitConnectors"></g><g id="innerHourMarkers"></g><g id="gridLines"></g>
         <line id="hourHandLine" x1="250" y1="250" /><line id="minHandLine" x1="250" y1="250" />
         <circle id="centerDot" cx="250" cy="250" r="14" />
         <circle id="timeLink" cx="250" cy="250" r="120" stroke="var(--red)" stroke-width="3.75" fill="none" transform="rotate(-90 250 250)" opacity="0.4"></circle>
         <circle id="secondProgress" cx="250" cy="250" r="120" transform="rotate(-90 250 250)"></circle>
         <path id="activeSector" fill="rgba(79, 172, 141, 0.12)" stroke="var(--green)" stroke-width="2.5"></path>
         <g id="hourMarkers"></g>
-        <circle id="greenDot" r="5.5" fill="var(--green)" class="outer-ring" /> 
-        <circle id="redHourDot" r="6" fill="var(--red)" /> 
-        <circle id="redMinDot" r="4" fill="var(--red)" opacity="0.8" /> 
+        <circle id="greenDot" r="5.5" fill="var(--green)" class="outer-ring" />
+        <circle id="redHourDot" r="6" fill="var(--red)" /><circle id="redMinDot" r="4" fill="var(--red)" opacity="0.8" />
         <g id="labels" class="outer-ring"></g>
     </svg>
     <div class="center-display">
         <div class="big-branch" id="cb">--</div>
-        <div class="date-row" id="cd">--</div>
+        <div class="date-row" id="cd" onclick="manualDateInput(event)">--</div>
         <div class="time-row" id="ct">--:--:--</div>
         <div class="ganzhi-row" id="cg">--</div>
-        <div id="st" style="font-weight:bold; margin-top:10px; font-size: clamp(14px, 3.8vmin, 20px);">--</div>
+        <div id="st">--</div>
     </div>
 </div>
 
-<div class="lunar-footer" id="lf">--</div>
+<div class="footer-container">
+    <div class="nav-moon nav-prev" onclick="shiftDate(event, -1)"></div>
+    <div class="lunar-footer" id="lf" onclick="shiftDate(event, 0)">--</div>
+    <div class="nav-moon nav-next" onclick="shiftDate(event, 1)"></div>
+</div>
 
 <div class="theme-switch">
-    <div class="btn btn-black active" onclick="setTheme(event, 'dark')" style="background:#0f0e0c"></div>
-    <div class="btn btn-white" onclick="setTheme(event, 'light')" style="background:#f1e7d0"></div>
+    <div class="btn-toggle" onclick="toggleTheme(event)"></div>
 </div>
 
 <script>
-    function setTheme(e, mode) {
-        if(e) e.stopPropagation(); 
-        document.body.classList.toggle('light-theme', mode === 'light');
-        document.querySelectorAll('.btn').forEach((b,i) => b.classList.toggle('active', (mode==='light'&&i===1) || (mode==='dark'&&i===0)));
-        localStorage.setItem('theme', mode);
+    let offsetDays = 0, resetTimer = null;
+
+    function manualDateInput(e) {
+        if (offsetDays === 0) return; 
+        if (e) e.stopPropagation(); 
+        const current = new Date(); current.setHours(0,0,0,0);
+        const display = new Date(); display.setDate(current.getDate() + offsetDays);
+        const input = prompt("跳轉日期 (YYYY-MM-DD):", display.toISOString().split('T')[0]);
+        if (input) {
+            const target = new Date(input);
+            if (!isNaN(target.getTime())) {
+                const targetMid = new Date(target).setHours(0,0,0,0);
+                offsetDays = Math.round((targetMid - current.getTime()) / (1000 * 60 * 60 * 24));
+                shiftDate(null, 0); 
+            } else { alert("格式錯誤"); }
+        }
     }
-    if(localStorage.getItem('theme') === 'light') setTheme(null, 'light');
+
+    function shiftDate(e, n) {
+        if(e) e.stopPropagation(); 
+        clearTimeout(resetTimer);
+        if (n === 0 && e && e.currentTarget.id === 'lf') { offsetDays = 0; } 
+        else { offsetDays += n; }
+        if (offsetDays !== 0) {
+            resetTimer = setTimeout(() => {
+                offsetDays = 0; document.body.classList.remove('preview-mode'); update();
+            }, 10000); 
+        }
+        document.body.classList.toggle('preview-mode', offsetDays !== 0);
+        update(); 
+    }
+
+    function toggleTheme(e) {
+        if(e) e.stopPropagation();
+        const isLight = document.body.classList.toggle('light-theme');
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    }
+    if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
 
     function toggleMinimal() {
+        if (offsetDays !== 0) return; 
+        if (event && event.target.closest('.theme-switch, .footer-container')) return;
         document.body.classList.toggle('minimal-mode');
         localStorage.setItem('minimal', document.body.classList.contains('minimal-mode'));
     }
@@ -139,66 +185,67 @@
         const gridG = document.getElementById('gridLines'), markersG = document.getElementById('hourMarkers'), innerMarkersG = document.getElementById('innerHourMarkers'), connectorsG = document.getElementById('orbitConnectors'), labelsG = document.getElementById('labels');
         document.getElementById('secondProgress').style.strokeDasharray = CIRCUMFERENCE;
         document.getElementById('timeLink').style.strokeDasharray = CIRCUMFERENCE;
-        
         data.forEach((item, i) => {
             const deg = i * 30;
             const p90 = polarToCartesian(90, deg), p120 = polarToCartesian(120, deg);
-
-            // 1. 120px 點位
-            const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            marker.setAttribute("cx", p120.x); marker.setAttribute("cy", p120.y); marker.setAttribute("r", "2.8"); marker.setAttribute("fill", "var(--gold)");
-            markersG.appendChild(marker);
-
-            // 2. 90px 點位
-            const iMarker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            iMarker.setAttribute("cx", p90.x); iMarker.setAttribute("cy", p90.y); iMarker.setAttribute("r", "1.6"); iMarker.setAttribute("fill", "var(--gold)");
-            innerMarkersG.appendChild(iMarker);
-
-            // 3. V7.6 新增：輻射狀連線 (Connectors)
+            const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            m.setAttribute("cx", p120.x); m.setAttribute("cy", p120.y); m.setAttribute("r", "2.8"); m.setAttribute("fill", "var(--gold)"); markersG.appendChild(m);
+            const im = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            im.setAttribute("cx", p90.x); im.setAttribute("cy", p90.y); im.setAttribute("r", "1.6"); im.setAttribute("fill", "var(--gold)"); innerMarkersG.appendChild(im);
             const conn = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y);
-            conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5");
-            connectorsG.appendChild(conn);
-
-            // 4. 原有的圓盤格線
+            conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y); conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5"); connectorsG.appendChild(conn);
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            const pGrid1 = polarToCartesian(120, deg - 15), pGrid2 = polarToCartesian(230, deg - 15);
-            line.setAttribute("x1", pGrid1.x); line.setAttribute("y1", pGrid1.y); line.setAttribute("x2", pGrid2.x); line.setAttribute("y2", pGrid2.y);
-            line.setAttribute("stroke", "var(--grid)"); gridG.appendChild(line);
-
+            const pG1 = polarToCartesian(120, deg - 15), pG2 = polarToCartesian(230, deg - 15);
+            line.setAttribute("x1", pG1.x); line.setAttribute("y1", pG1.y); line.setAttribute("x2", pG2.x); line.setAttribute("y2", pG2.y); line.setAttribute("stroke", "var(--grid)"); gridG.appendChild(line);
             const po = polarToCartesian(205, deg); labelsG.innerHTML += `<text x="${po.x}" y="${po.y}" fill="var(--green)" font-size="16" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.o}</text>`;
             const pb = polarToCartesian(150, deg); labelsG.innerHTML += `<text x="${pb.x}" y="${pb.y}" fill="var(--gold)" font-size="23" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.b}</text>`;
         });
     }
 
     function update() {
-        const now = new Date(); const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+        const realNow = new Date();
+        const displayDate = new Date(); displayDate.setDate(realNow.getDate() + offsetDays);
+        const h = realNow.getHours(), m = realNow.getMinutes(), s = realNow.getSeconds(), ms = realNow.getMilliseconds();
         const isMin = document.body.classList.contains('minimal-mode');
-        
-        if (typeof Lunar !== 'undefined') {
+        const isPreview = (offsetDays !== 0);
+
+        if (typeof Lunar !== 'undefined' && typeof Solar !== 'undefined') {
             try {
-                const l = Solar.fromDate(now).getLunar();
+                const sObj = Solar.fromDate(displayDate);
+                const l = sObj.getLunar();
                 const yearAlias = ({'甲':'青','乙':'青','丙':'赤','丁':'赤','戊':'黃','己':'黃','庚':'白','辛':'白','壬':'黑','癸':'黑'}[l.getYearGanByLiChun()]||'') + ({'子':'鼠','丑':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'}[l.getYearZhiByLiChun()]||'');
-                document.getElementById('cd').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+                document.getElementById('cd').innerText = `${displayDate.getFullYear()}年${displayDate.getMonth()+1}月${displayDate.getDate()}日`;
                 document.getElementById('cg').innerText = `${l.getYearInGanZhi()}年 ${l.getMonthInGanZhi()}月 ${l.getDayInGanZhi()}日`;
-                document.getElementById('st').innerText = l.getPrevJieQi().getName(); 
+                document.getElementById('st').innerText = l.getJieQi() || l.getPrevJieQi().getName();
                 document.getElementById('lf').innerText = `${yearAlias}年 ${l.getMonthInChinese()}月 ${l.getDayInChinese()}`;
             } catch(e) {}
         }
-        document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
-        document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
+        
+        if (!isPreview) {
+            document.getElementById('ct').innerText = realNow.toLocaleTimeString('zh-TW', {hour12:false});
+            let idx = Math.floor((h + 1) / 2) % 12; document.getElementById('cb').innerText = data[idx].b; 
+        }
+
         const hR = isMin ? 90 : 120;
         const degH = ((h % 12) * 3600 + m * 60 + s) / 43200 * 360, degM = (m * 60 + s) / 3600 * 360, deg24 = (h * 3600 + m * 60 + s) / 86400 * 360;
         const ph = polarToCartesian(hR, degH), pm = polarToCartesian(120, degM);
+        
         document.getElementById('redHourDot').setAttribute("cx", ph.x); document.getElementById('redHourDot').setAttribute("cy", ph.y);
         document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
         document.getElementById('greenDot').setAttribute("cx", polarToCartesian(230, deg24).x); document.getElementById('greenDot').setAttribute("cy", polarToCartesian(230, deg24).y);
+        
+        // V9.1 關鍵回溯：JS 驅動線條權重
         document.getElementById('hourHandLine').setAttribute("x2", ph.x); document.getElementById('hourHandLine').setAttribute("y2", ph.y);
+        document.getElementById('hourHandLine').setAttribute("stroke-width", 6);
         document.getElementById('minHandLine').setAttribute("x2", pm.x); document.getElementById('minHandLine').setAttribute("y2", pm.y);
-        let idx = Math.floor((h + 1) / 2) % 12;
-        const sA = idx * 30 - 15, eA = idx * 30 + 15, pS1 = polarToCartesian(230, sA), pS2 = polarToCartesian(230, eA), pS3 = polarToCartesian(175, eA), pS4 = polarToCartesian(175, sA);
+        document.getElementById('minHandLine').setAttribute("stroke-width", 4);
+
+        document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
+        document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
+        
+        let aIdx = Math.floor((h + 1) / 2) % 12;
+        const sA = aIdx * 30 - 15, eA = aIdx * 30 + 15, pS1 = polarToCartesian(230, sA), pS2 = polarToCartesian(230, eA), pS3 = polarToCartesian(175, eA), pS4 = polarToCartesian(175, sA);
         document.getElementById('activeSector').setAttribute("d", `M ${pS4.x} ${pS4.y} L ${pS1.x} ${pS1.y} A 230 230 0 0 1 ${pS2.x} ${pS2.y} L ${pS3.x} ${pS3.y} A 175 175 0 0 0 ${pS4.x} ${pS4.y}`);
-        document.getElementById('cb').innerText = data[idx].b; document.getElementById('ct').innerText = now.toLocaleTimeString('zh-TW', {hour12:false});
     }
     init(); setInterval(update, 50); update();
 </script>
