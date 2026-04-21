@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="./icon.png">
     <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
-    <title>子午流注 V5.2 Pro</title>
+    <title>子午流注 V5.4 矩陣版</title>
     <style>
         :root { --bg: #0f0e0c; --gold: #d4a75b; --green: #4fac8d; --red: #ff3e3e; --grid: rgba(212, 167, 91, 0.15); }
         body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: "PingFang TC", sans-serif; -webkit-text-size-adjust: none; padding-bottom: env(safe-area-inset-bottom); touch-action: auto !important; }
@@ -42,9 +42,9 @@
     </svg>
     <div class="center-display">
         <div class="big-branch" id="cb">--</div>
-        <div class="date-row" id="cd"></div>
+        <div class="date-row" id="cd">--</div>
         <div class="time-row" id="ct">--:--:--</div>
-        <div class="ganzhi-row" id="cg"></div>
+        <div class="ganzhi-row" id="cg">--</div>
         <div class="solar-term" id="st">--</div>
     </div>
 </div>
@@ -52,9 +52,21 @@
 
 <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
-    
     const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
     const CIRCUMFERENCE = 2 * Math.PI * 120;
+
+    // --- 全自動生肖矩陣映射 ---
+    function getYearAlias(lunar) {
+        const gan = lunar.getYearGanByLiChun();
+        const zhi = lunar.getYearZhiByLiChun();
+        
+        // 天干對應五色
+        const colorMap = { '甲':'青', '乙':'青', '丙':'赤', '丁':'赤', '戊':'黃', '己':'黃', '庚':'白', '辛':'白', '壬':'黑', '癸':'黑' };
+        // 地支對應生肖
+        const animalMap = { '子':'鼠', '丑':'牛', '寅':'虎', '卯':'兔', '辰':'龍', '巳':'蛇', '午':'馬', '未':'羊', '申':'猴', '酉':'雞', '戌':'狗', '亥':'豬' };
+        
+        return (colorMap[gan] || '') + (animalMap[zhi] || '');
+    }
 
     function polarToCartesian(r, deg) { const rad = (deg - 90) * Math.PI / 180.0; return { x: 250 + (r * Math.cos(rad)), y: 250 + (r * Math.sin(rad)) }; }
 
@@ -80,19 +92,19 @@
         const now = new Date();
         const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
         
-        // --- 曆法庫運算 ---
         if (typeof Lunar !== 'undefined') {
             const solar = Solar.fromDate(now);
             const lunar = solar.getLunar();
-            const jieQi = lunar.getJieQi(); // 獲取當前節氣
             
+            // 使用矩陣映射獲取別名
+            const yearAlias = getYearAlias(lunar);
+
             document.getElementById('cd').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
             document.getElementById('cg').innerText = `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`;
-            document.getElementById('st').innerText = lunar.getPrevJieQi().getName(); // 顯示最近的一個節氣（穀雨）
-            document.getElementById('lf').innerText = `歲次${lunar.getYearInGanZhiByLiChun()} ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
+            document.getElementById('st').innerText = lunar.getPrevJieQi().getName(); 
+            document.getElementById('lf').innerText = `${yearAlias}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
         }
 
-        // --- 視覺動態更新 ---
         document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
         document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
         document.getElementById('redHourDot').setAttribute("cx", polarToCartesian(120, ((h % 12) * 3600 + m * 60 + s) / 43200 * 360).x);
