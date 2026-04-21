@@ -7,22 +7,18 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="./icon.png">
-    <title>子午流注 V4.99 校準版</title>
+    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
+    <title>子午流注 V5.2 Pro</title>
     <style>
         :root { --bg: #0f0e0c; --gold: #d4a75b; --green: #4fac8d; --red: #ff3e3e; --grid: rgba(212, 167, 91, 0.15); }
-        body { 
-            background: var(--bg); color: var(--gold); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; min-height: 100vh; margin: 0; 
-            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; -webkit-text-size-adjust: none; 
-            padding-bottom: env(safe-area-inset-bottom); touch-action: auto !important;
-        }
+        body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: "PingFang TC", sans-serif; -webkit-text-size-adjust: none; padding-bottom: env(safe-area-inset-bottom); touch-action: auto !important; }
         .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); display: flex; justify-content: center; align-items: center; }
         .clock-wrapper svg { width: 100%; height: 100%; }
         .center-display { position: absolute; text-align: center; z-index: 10; pointer-events: none; width: 45%; }
         .big-branch { font-size: clamp(30px, 12.7vmin, 70px); color: var(--green); margin-bottom: 5px; filter: drop-shadow(0 0 15px var(--green)); line-height: 0.9; }
         .date-row { font-size: clamp(10px, 2.9vmin, 16px); margin: 2px 0; }
         .time-row { font-family: monospace; font-size: clamp(16px, 4.3vmin, 24px); font-weight: bold; margin: 5px 0; letter-spacing: 1px; }
-        .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.2vmin, 18px); letter-spacing: 0px; font-weight: bold; }
+        .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.2vmin, 18px); font-weight: bold; }
         .solar-term { font-size: clamp(14px, 4vmin, 22px); margin-top: 4px; font-weight: bold; letter-spacing: 2px; }
         .lunar-footer { margin-top: 20px; padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(212,167,91,0.05); font-size: clamp(14px, 3.6vmin, 20px); letter-spacing: 2px; }
         #secondProgress { stroke: var(--gold); stroke-width: 1.5; fill: none; stroke-linecap: round; filter: drop-shadow(0 0 3px var(--gold)); }
@@ -49,35 +45,16 @@
         <div class="date-row" id="cd"></div>
         <div class="time-row" id="ct">--:--:--</div>
         <div class="ganzhi-row" id="cg"></div>
-        <div class="solar-term" id="st">穀雨</div>
+        <div class="solar-term" id="st">--</div>
     </div>
 </div>
-<div class="lunar-footer" id="lf"></div>
+<div class="lunar-footer" id="lf">--</div>
 
 <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
-
+    
     const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
     const CIRCUMFERENCE = 2 * Math.PI * 120;
-
-    function getJDN(y, m, d) {
-        if (m <= 2) { y -= 1; m += 12; }
-        let a = Math.floor(y / 100);
-        let b = 2 - a + Math.floor(a / 4);
-        return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + b - 1524.5;
-    }
-
-    function getGanzhi(y, m, d) {
-        const tg = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
-        const dz = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
-        const jdn = getJDN(y, m, d);
-        // 基準校準：JDN 2461151 (2026-04-20) 映射至索引 0 (甲子)
-        const dIdx = (Math.floor(jdn) + 49) % 60;
-        const dGZ = tg[dIdx % 10] + dz[dIdx % 12];
-        const yGZ = tg[(y - 4) % 10] + dz[(y - 4) % 12];
-        let mGZ = (m === 4) ? "壬辰" : (m === 5) ? "癸巳" : "月柱校準中";
-        return { yGZ, mGZ, dGZ, jdn };
-    }
 
     function polarToCartesian(r, deg) { const rad = (deg - 90) * Math.PI / 180.0; return { x: 250 + (r * Math.cos(rad)), y: 250 + (r * Math.sin(rad)) }; }
 
@@ -88,14 +65,11 @@
         data.forEach((item, i) => {
             const deg = i * 30; const mp = polarToCartesian(120, deg);
             const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            m.setAttribute("cx", mp.x); m.setAttribute("cy", mp.y);
-            m.setAttribute("r", "2.5"); m.setAttribute("fill", "var(--gold)");
+            m.setAttribute("cx", mp.x); m.setAttribute("cy", mp.y); m.setAttribute("r", "2.5"); m.setAttribute("fill", "var(--gold)");
             markersG.appendChild(m);
             const p1 = polarToCartesian(120, deg - 15); const p2 = polarToCartesian(230, deg - 15);
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y);
-            line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
-            line.setAttribute("stroke", "var(--grid)");
+            line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y); line.setAttribute("stroke", "var(--grid)");
             gridG.appendChild(line);
             const po = polarToCartesian(205, deg); labelsG.innerHTML += `<text x="${po.x}" y="${po.y}" fill="var(--green)" font-size="15" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.o}</text>`;
             const pb = polarToCartesian(150, deg); labelsG.innerHTML += `<text x="${pb.x}" y="${pb.y}" fill="var(--gold)" font-size="22" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.b}</text>`;
@@ -103,25 +77,36 @@
     }
 
     function update() {
-        const now = new Date(); const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
-        const y = now.getFullYear(), mo = now.getMonth() + 1, d = now.getDate();
+        const now = new Date();
+        const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+        
+        // --- 曆法庫運算 ---
+        if (typeof Lunar !== 'undefined') {
+            const solar = Solar.fromDate(now);
+            const lunar = solar.getLunar();
+            const jieQi = lunar.getJieQi(); // 獲取當前節氣
+            
+            document.getElementById('cd').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+            document.getElementById('cg').innerText = `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`;
+            document.getElementById('st').innerText = lunar.getPrevJieQi().getName(); // 顯示最近的一個節氣（穀雨）
+            document.getElementById('lf').innerText = `歲次${lunar.getYearInGanZhiByLiChun()} ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
+        }
+
+        // --- 視覺動態更新 ---
         document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
         document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
-        const degH = ((h % 12) * 3600 + m * 60 + s) / 43200 * 360, degM = (m * 60 + s) / 3600 * 360;
-        const ph = polarToCartesian(120, degH), pm = polarToCartesian(120, degM);
-        document.getElementById('redHourDot').setAttribute("cx", ph.x); document.getElementById('redHourDot').setAttribute("cy", ph.y);
-        document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
+        document.getElementById('redHourDot').setAttribute("cx", polarToCartesian(120, ((h % 12) * 3600 + m * 60 + s) / 43200 * 360).x);
+        document.getElementById('redHourDot').setAttribute("cy", polarToCartesian(120, ((h % 12) * 3600 + m * 60 + s) / 43200 * 360).y);
+        document.getElementById('redMinDot').setAttribute("cx", polarToCartesian(120, (m * 60 + s) / 3600 * 360).x);
+        document.getElementById('redMinDot').setAttribute("cy", polarToCartesian(120, (m * 60 + s) / 3600 * 360).y);
         document.getElementById('greenDot').setAttribute("cx", polarToCartesian(230, (h * 3600 + m * 60 + s) / 86400 * 360).x);
         document.getElementById('greenDot').setAttribute("cy", polarToCartesian(230, (h * 3600 + m * 60 + s) / 86400 * 360).y);
+        
         let idx = Math.floor((h + 1) / 2) % 12;
         const sA = idx * 30 - 15, eA = idx * 30 + 15, pS1 = polarToCartesian(230, sA), pS2 = polarToCartesian(230, eA), pS3 = polarToCartesian(175, eA), pS4 = polarToCartesian(175, sA);
         document.getElementById('activeSector').setAttribute("d", `M ${pS4.x} ${pS4.y} L ${pS1.x} ${pS1.y} A 230 230 0 0 1 ${pS2.x} ${pS2.y} L ${pS3.x} ${pS3.y} A 175 175 0 0 0 ${pS4.x} ${pS4.y}`);
         document.getElementById('cb').innerText = data[idx].b; 
         document.getElementById('ct').innerText = now.toLocaleTimeString('zh-TW', {hour12:false});
-        document.getElementById('cd').innerText = `${y}年${mo}月${d}日`;
-        const gz = getGanzhi(y, mo, d);
-        document.getElementById('cg').innerText = `${gz.yGZ}年 ${gz.mGZ}月 ${gz.dGZ}日`;
-        document.getElementById('lf').innerText = `JDN: ${gz.jdn} | 基準日校準已執行`;
     }
 
     init(); setInterval(update, 50); update();
