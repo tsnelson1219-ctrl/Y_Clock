@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+    <title>子午流注時鐘</title>
+    <style>
+        :root { --bg: #0f0e0c; --gold: #d4a75b; --green: #4fac8d; --red: #ff3e3e; --grid: rgba(212, 167, 91, 0.15); }
+        body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: "PingFang TC", sans-serif; }
+        .clock-wrapper { position: relative; width: 550px; height: 550px; display: flex; justify-content: center; align-items: center; }
+        .center-display { position: absolute; text-align: center; z-index: 10; pointer-events: none; width: 220px; }
+        .big-branch { font-size: 70px; color: var(--green); margin-bottom: 10px; filter: drop-shadow(0 0 15px var(--green)); line-height: 0.9; }
+        .date-row { font-size: 16px; margin: 2px 0; }
+        .time-row { font-family: monospace; font-size: 24px; font-weight: bold; margin: 5px 0; letter-spacing: 1px; }
+        .ganzhi-row { color: var(--green); font-size: 18px; letter-spacing: 1px; font-weight: bold; }
+        .solar-term { font-size: 22px; margin-top: 4px; font-weight: bold; }
+        .lunar-footer { margin-top: 20px; padding: 10px 50px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(212,167,91,0.05); font-size: 20px; letter-spacing: 4px; }
+        .dot-glow { filter: drop-shadow(0 0 4px currentColor); }
+        #secondProgress { stroke: var(--gold); stroke-width: 1.5; fill: none; stroke-linecap: round; filter: drop-shadow(0 0 3px var(--gold)); }
+        #timeLink { stroke: var(--red); stroke-width: 3.75; fill: none; stroke-linecap: round; opacity: 0.4; }
+    </style>
+</head>
+<body>
+
+<div class="clock-wrapper">
+    <svg width="500" height="500" viewBox="0 0 500 500">
+        <circle cx="250" cy="250" r="230" fill="none" stroke="var(--grid)" stroke-width="1"/> 
+        <circle cx="250" cy="250" r="175" fill="none" stroke="var(--grid)" stroke-width="1.5"/> 
+        <circle cx="250" cy="250" r="120" fill="none" stroke="var(--grid)" stroke-width="1"/> 
+        <g id="hourMarkers"></g><g id="gridLines"></g>
+        <circle id="timeLink" cx="250" cy="250" r="120" transform="rotate(-90 250 250)"></circle>
+        <circle id="secondProgress" cx="250" cy="250" r="120" transform="rotate(-90 250 250)"></circle>
+        <path id="activeSector" fill="rgba(79, 172, 141, 0.15)" stroke="var(--green)" stroke-width="2"></path>
+        <circle id="greenDot" r="5.5" fill="var(--green)" class="dot-glow" /> 
+        <circle id="redHourDot" r="6" fill="var(--red)" class="dot-glow" /> 
+        <circle id="redMinDot" r="4" fill="var(--red)" class="dot-glow" opacity="0.8" /> 
+        <g id="labels"></g>
+    </svg>
+    <div class="center-display">
+        <div class="big-branch" id="cb">--</div>
+        <div class="date-row" id="cd">2026年4月21日</div>
+        <div class="time-row" id="ct">--:--:--</div>
+        <div class="ganzhi-row" id="cg">丙午年 壬辰月 乙丑日</div>
+        <div class="solar-term">穀雨</div>
+    </div>
+</div>
+<div class="lunar-footer" id="lf">赤馬年 三月 初五</div>
+
+<script>
+    // 註冊 Service Worker 實現離線功能
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js');
+        });
+    }
+
+    const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
+    const CIRCUMFERENCE = 2 * Math.PI * 120;
+    function polarToCartesian(r, deg) { const rad = (deg - 90) * Math.PI / 180.0; return { x: 250 + (r * Math.cos(rad)), y: 250 + (r * Math.sin(rad)) }; }
+    function init() {
+        const gridG = document.getElementById('gridLines'); const markersG = document.getElementById('hourMarkers'); const labelsG = document.getElementById('labels');
+        document.getElementById('secondProgress').style.strokeDasharray = CIRCUMFERENCE;
+        document.getElementById('timeLink').style.strokeDasharray = CIRCUMFERENCE;
+        data.forEach((item, i) => {
+            const deg = i * 30; const mp = polarToCartesian(120, deg);
+            const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            m.setAttribute("cx", mp.x); m.setAttribute("cy", mp.y); m.setAttribute("r", "2.5"); m.setAttribute("fill", "var(--gold)");
+            markersG.appendChild(m);
+            const p1 = polarToCartesian(120, deg - 15); const p2 = polarToCartesian(230, deg - 15);
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y); line.setAttribute("stroke", "var(--grid)");
+            gridG.appendChild(line);
+            const po = polarToCartesian(205, deg); labelsG.innerHTML += `<text x="${po.x}" y="${po.y}" fill="var(--green)" font-size="15" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.o}</text>`;
+            const pb = polarToCartesian(150, deg); labelsG.innerHTML += `<text x="${pb.x}" y="${pb.y}" fill="var(--gold)" font-size="22" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.b}</text>`;
+        });
+    }
+    function update() {
+        const now = new Date(); const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds(), ms = now.getMilliseconds();
+        document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
+        document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
+        const degH = ((h % 12) * 3600 + m * 60 + s) / 43200 * 360; const ph = polarToCartesian(120, degH);
+        const degM = (m * 60 + s) / 3600 * 360; const pm = polarToCartesian(120, degM);
+        document.getElementById('redHourDot').setAttribute("cx", ph.x); document.getElementById('redHourDot').setAttribute("cy", ph.y);
+        document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
+        const deg24 = (h * 3600 + m * 60 + s) / 86400 * 360; const pg = polarToCartesian(230, deg24);
+        document.getElementById('greenDot').setAttribute("cx", pg.x); document.getElementById('greenDot').setAttribute("cy", pg.y);
+        let idx = Math.floor((h + 1) / 2) % 12; const sA = idx * 30 - 15, eA = idx * 30 + 15;
+        const pS1 = polarToCartesian(230, sA), pS2 = polarToCartesian(230, eA), pS3 = polarToCartesian(175, eA), pS4 = polarToCartesian(175, sA);
+        document.getElementById('activeSector').setAttribute("d", `M ${pS4.x} ${pS4.y} L ${pS1.x} ${pS1.y} A 230 230 0 0 1 ${pS2.x} ${pS2.y} L ${pS3.x} ${pS3.y} A 175 175 0 0 0 ${pS4.x} ${pS4.y}`);
+        document.getElementById('cb').innerText = data[idx].b; document.getElementById('ct').innerText = now.toLocaleTimeString('zh-TW', {hour12:false});
+    }
+    init(); setInterval(update, 50); update();
+</script>
+</body>
+</html>
