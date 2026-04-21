@@ -49,7 +49,23 @@
     </div>
 </div>
 <div class="lunar-footer" id="lf">--</div>
+// --- 1. 屏蔽瀏覽器安裝提示 (Silent Mode) ---
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault(); // 攔截並取消提示
+  return false;
+});
 
+// --- 2. Service Worker 註冊 ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            // 每當打開頁面時自動檢查更新
+            reg.update();
+        });
+    });
+}
+
+// (其餘 Lunar 運算與 SVG 邏輯維持 V5.4 版本...)
 <script>
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
     const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
