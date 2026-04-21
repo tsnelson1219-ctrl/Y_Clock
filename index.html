@@ -17,44 +17,35 @@
             --btn-border: var(--gold);
         }
 
-        /* 修正：白色主題設定為古籍白褐色 */
         body.light-theme {
-            --bg: #f1e7d0; /* 古籍紙本色 */
-            --gold: #5d4037; /* 墨咖啡色文字 */
-            --green: #2e5a4b; /* 墨綠色 */
-            --red: #a93226;
-            --grid: rgba(60, 60, 60, 0.25); /* 深灰色格線 */
-            --glow: none;
-            --btn-border: #5d4037;
+            --bg: #f1e7d0; --gold: #5d4037; --green: #2e5a4b; --red: #a93226;
+            --grid: rgba(60, 60, 60, 0.25); --glow: none; --btn-border: #5d4037;
         }
 
         body { 
             background: var(--bg); color: var(--gold); display: flex; flex-direction: column; 
             justify-content: center; align-items: center; min-height: 100vh; margin: 0; 
-            transition: var(--trans); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; 
+            transition: var(--trans); font-family: "PingFang TC", sans-serif; 
             -webkit-text-size-adjust: none; padding-bottom: env(safe-area-inset-bottom);
         }
 
         .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); display: flex; justify-content: center; align-items: center; }
         .clock-wrapper svg { width: 100%; height: 100%; transition: var(--trans); }
         .center-display { position: absolute; text-align: center; z-index: 10; pointer-events: none; width: 45%; }
-        
         .big-branch { font-size: clamp(30px, 12.7vmin, 70px); color: var(--green); margin-bottom: 5px; filter: var(--glow); line-height: 0.9; }
         .date-row { font-size: clamp(10px, 2.9vmin, 16px); margin: 2px 0; opacity: 0.8; }
         .time-row { font-family: monospace; font-size: clamp(16px, 4.3vmin, 24px); font-weight: bold; margin: 5px 0; letter-spacing: 1px; }
         .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.2vmin, 18px); font-weight: bold; }
-        
         .lunar-footer { margin-top: 20px; padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 20px); letter-spacing: 2px; transition: var(--trans); }
 
-        /* 修正：主題切換按鈕，移除紅圈 */
         .theme-switch { margin-top: 35px; display: flex; gap: 25px; }
-        .btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); cursor: pointer; transition: var(--trans); position: relative; }
+        .btn { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); cursor: pointer; transition: var(--trans); }
         .btn-black { background: #0f0e0c; }
         .btn-white { background: #f1e7d0; }
         .btn.active { transform: scale(1.15); border: 4px solid var(--btn-border); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
         #secondProgress { stroke: var(--gold); stroke-width: 1.5; fill: none; stroke-linecap: round; }
-        #timeLink { stroke: var(--red); stroke-width: 3.75; fill: none; stroke-linecap: round; opacity: 0.4; }
+        #timeLink { stroke: var(--red); stroke-width: 3.75; fill: none; stroke-linecap: round; opacity: 0.4; transition: stroke-dashoffset 0.5s ease-out; }
     </style>
 </head>
 <body class="dark">
@@ -64,6 +55,7 @@
         <circle cx="250" cy="250" r="230" fill="none" stroke="var(--grid)" stroke-width="1"/> 
         <circle cx="250" cy="250" r="175" fill="none" stroke="var(--grid)" stroke-width="1.5"/> 
         <circle cx="250" cy="250" r="120" fill="none" stroke="var(--grid)" stroke-width="1"/> 
+        <g id="hourMarkers"></g>
         <g id="gridLines"></g>
         <circle id="timeLink" cx="250" cy="250" r="120" transform="rotate(-90 250 250)"></circle>
         <circle id="secondProgress" cx="250" cy="250" r="120" transform="rotate(-90 250 250)"></circle>
@@ -91,15 +83,9 @@
 
 <script>
     function setTheme(mode) {
-        const body = document.body;
-        const btns = document.querySelectorAll('.btn');
-        if (mode === 'light') {
-            body.classList.add('light-theme');
-            btns[1].classList.add('active'); btns[0].classList.remove('active');
-        } else {
-            body.classList.remove('light-theme');
-            btns[0].classList.add('active'); btns[1].classList.remove('active');
-        }
+        const body = document.body; const btns = document.querySelectorAll('.btn');
+        if (mode === 'light') { body.classList.add('light-theme'); btns[1].classList.add('active'); btns[0].classList.remove('active'); }
+        else { body.classList.remove('light-theme'); btns[0].classList.add('active'); btns[1].classList.remove('active'); }
         localStorage.setItem('theme', mode);
     }
     if(localStorage.getItem('theme') === 'light') setTheme('light');
@@ -109,19 +95,31 @@
 
     const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
     const CIRCUMFERENCE = 2 * Math.PI * 120;
-
     function polarToCartesian(r, deg) { const rad = (deg - 90) * Math.PI / 180.0; return { x: 250 + (r * Math.cos(rad)), y: 250 + (r * Math.sin(rad)) }; }
 
     function init() {
-        const gridG = document.getElementById('gridLines'); const labelsG = document.getElementById('labels');
+        const gridG = document.getElementById('gridLines'); 
+        const markersG = document.getElementById('hourMarkers'); 
+        const labelsG = document.getElementById('labels');
         document.getElementById('secondProgress').style.strokeDasharray = CIRCUMFERENCE;
         document.getElementById('timeLink').style.strokeDasharray = CIRCUMFERENCE;
+        
         data.forEach((item, i) => {
             const deg = i * 30;
+            // 1. 補回 12 小點 (hour markers)
+            const mp = polarToCartesian(120, deg);
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            marker.setAttribute("cx", mp.x); marker.setAttribute("cy", mp.y);
+            marker.setAttribute("r", "2.5"); marker.setAttribute("fill", "var(--gold)");
+            markersG.appendChild(marker);
+
+            // 2. 圓盤格線
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             const p1 = polarToCartesian(120, deg - 15), p2 = polarToCartesian(230, deg - 15);
             line.setAttribute("x1", p1.x); line.setAttribute("y1", p1.y); line.setAttribute("x2", p2.x); line.setAttribute("y2", p2.y);
             line.setAttribute("stroke", "var(--grid)"); gridG.appendChild(line);
+
+            // 3. 標籤
             const po = polarToCartesian(205, deg); labelsG.innerHTML += `<text x="${po.x}" y="${po.y}" fill="var(--green)" font-size="15" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.o}</text>`;
             const pb = polarToCartesian(150, deg); labelsG.innerHTML += `<text x="${pb.x}" y="${pb.y}" fill="var(--gold)" font-size="22" font-weight="bold" text-anchor="middle" dominant-baseline="middle">${item.b}</text>`;
         });
@@ -135,12 +133,11 @@
             const gan = lunar.getYearGanByLiChun(), zhi = lunar.getYearZhiByLiChun();
             const colorMap = { '甲':'青', '乙':'青', '丙':'赤', '丁':'赤', '戊':'黃', '己':'黃', '庚':'白', '辛':'白', '壬':'黑', '癸':'黑' };
             const animalMap = { '子':'鼠', '丑':'牛', '寅':'虎', '卯':'兔', '辰':'龍', '巳':'蛇', '午':'馬', '未':'羊', '申':'猴', '酉':'雞', '戌':'狗', '亥':'豬' };
-            const yearAlias = (colorMap[gan]||'') + (animalMap[zhi]||'');
             
             document.getElementById('cd').innerText = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
             document.getElementById('cg').innerText = `${lunar.getYearInGanZhi()}年 ${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日`;
             document.getElementById('st').innerText = lunar.getPrevJieQi().getName(); 
-            document.getElementById('lf').innerText = `${yearAlias}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
+            document.getElementById('lf').innerText = `${colorMap[gan]}${animalMap[zhi]}年 ${lunar.getMonthInChinese()}月 ${lunar.getDayInChinese()}`;
         }
         document.getElementById('secondProgress').style.strokeDashoffset = CIRCUMFERENCE * (1 - (s + ms / 1000) / 60);
         document.getElementById('timeLink').style.strokeDashoffset = CIRCUMFERENCE * (1 - (m + s / 60) / 60);
