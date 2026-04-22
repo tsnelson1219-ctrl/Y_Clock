@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="./icon.png">
-    <script src="https://cdn.jsdelivr.net/npm/lunar-javascript/lunar.min.js"></script>
+    <script src="./lunar.min.js"></script>
     <title>子午流注-合於日月</title>
     <style>
         :root {
@@ -22,12 +22,10 @@
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
 
-        /* 模式隱藏邏輯 */
         body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #gridLines, body.minimal-mode #activeSector { 
             opacity: 0 !important; visibility: hidden !important; 
         }
 
-        /* 預覽模式隱藏實時組件 */
         body.preview-mode .outer-ring, body.preview-mode #gridLines, body.preview-mode #activeSector,
         body.preview-mode #hourMarkers, body.preview-mode #innerHourMarkers, body.preview-mode #orbitConnectors,
         body.preview-mode #hourOrbit, body.preview-mode #timeLink, body.preview-mode #secondProgress,
@@ -67,7 +65,6 @@
         .btn-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--gold); background: #0f0e0c; cursor: pointer; transition: var(--trans); opacity: 0.5; }
         body.light-theme .btn-toggle { background: #f1e7d0; border-width: 4px; }
 
-        /* 向心線樣式 */
         #hourHandLine, #minHandLine { stroke: var(--red); stroke-linecap: round; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         body.minimal-mode:not(.preview-mode) #hourHandLine, body.minimal-mode:not(.preview-mode) #minHandLine { opacity: 0.5 !important; }
         body.light-theme #hourHandLine, body.light-theme #minHandLine { stroke: var(--gold); }
@@ -81,7 +78,6 @@
         body.minimal-mode #innerHourMarkers { opacity: 1; visibility: visible; }
         body.minimal-mode #orbitConnectors { opacity: 0.3; visibility: visible; }
         
-        /* 移除坐標上的 transition 確保流暢 */
         #redHourDot, #redMinDot, #greenDot { transition: opacity 0.5s; }
     </style>
 </head>
@@ -130,6 +126,13 @@
 </div>
 
 <script>
+    // PWA Service Worker 註冊
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
+        });
+    }
+
     let offsetDays = 0, resetTimer = null;
 
     function manualDateInput(e) {
@@ -191,9 +194,11 @@
             const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             m.setAttribute("cx", p120.x); m.setAttribute("cy", p120.y); m.setAttribute("r", "2.8"); m.setAttribute("fill", "var(--gold)"); markersG.appendChild(m);
             const im = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            im.setAttribute("cx", p90.x); im.setAttribute("cy", p90.y); im.setAttribute("r", "1.6"); im.setAttribute("fill", "var(--gold)"); innerMarkersG.appendChild(im);
+            const imp_fix = polarToCartesian(90, deg);
+            im.setAttribute("cx", imp_fix.x); im.setAttribute("cy", imp_fix.y); im.setAttribute("r", "1.6"); im.setAttribute("fill", "var(--gold)"); innerMarkersG.appendChild(im);
             const conn = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y); conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5"); connectorsG.appendChild(conn);
+            conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y);
+            conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5"); connectorsG.appendChild(conn);
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             const pG1 = polarToCartesian(120, deg - 15), pG2 = polarToCartesian(230, deg - 15);
             line.setAttribute("x1", pG1.x); line.setAttribute("y1", pG1.y); line.setAttribute("x2", pG2.x); line.setAttribute("y2", pG2.y); line.setAttribute("stroke", "var(--grid)"); gridG.appendChild(line);
@@ -215,6 +220,7 @@
                 const l = sObj.getLunar();
                 const yearAlias = ({'甲':'青','乙':'青','丙':'赤','丁':'赤','戊':'黃','己':'黃','庚':'白','辛':'白','壬':'黑','癸':'黑'}[l.getYearGanByLiChun()]||'') + ({'子':'鼠','丑':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'}[l.getYearZhiByLiChun()]||'');
                 document.getElementById('cd').innerText = `${displayDate.getFullYear()}年${displayDate.getMonth()+1}月${displayDate.getDate()}日`;
+                document.getElementById('cd').style.pointerEvents = isPreview ? "auto" : "none";
                 document.getElementById('cg').innerText = `${l.getYearInGanZhi()}年 ${l.getMonthInGanZhi()}月 ${l.getDayInGanZhi()}日`;
                 document.getElementById('st').innerText = l.getJieQi() || l.getPrevJieQi().getName();
                 document.getElementById('lf').innerText = `${yearAlias}年 ${l.getMonthInChinese()}月 ${l.getDayInChinese()}`;
@@ -234,7 +240,6 @@
         document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
         document.getElementById('greenDot').setAttribute("cx", polarToCartesian(230, deg24).x); document.getElementById('greenDot').setAttribute("cy", polarToCartesian(230, deg24).y);
         
-        // V9.1 關鍵回溯：JS 驅動線條權重
         document.getElementById('hourHandLine').setAttribute("x2", ph.x); document.getElementById('hourHandLine').setAttribute("y2", ph.y);
         document.getElementById('hourHandLine').setAttribute("stroke-width", 6);
         document.getElementById('minHandLine').setAttribute("x2", pm.x); document.getElementById('minHandLine').setAttribute("y2", pm.y);
