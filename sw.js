@@ -1,4 +1,5 @@
-const CACHE_NAME = 'ziwu-clock-v9.2'; // 更新版本號
+// sw.js (V9.4 - 強制清理版)
+const CACHE_NAME = 'ziwu-clock-v9.4'; 
 const ASSETS = [
   './',
   './index.html',
@@ -7,33 +8,17 @@ const ASSETS = [
   './icon.png'
 ];
 
-// 安裝時快取所有資產
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
+self.addEventListener('install', (e) => {
+  self.skipWaiting(); // 強制跳過等待，立即啟用新版
+  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
 });
 
-// 啟用時清理舊快取
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
-        })
-      );
-    })
-  );
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(
+    keys.map(k => { if (k !== CACHE_NAME) return caches.delete(k); })
+  )));
 });
 
-// 攔截請求：優先讀取快取
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
+self.addEventListener('fetch', (e) => {
+  e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
 });
