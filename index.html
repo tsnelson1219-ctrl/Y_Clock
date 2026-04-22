@@ -22,10 +22,12 @@
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
 
+        /* 模式隱藏邏輯 */
         body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #gridLines, body.minimal-mode #activeSector { 
             opacity: 0 !important; visibility: hidden !important; 
         }
 
+        /* 預覽模式自動隱藏實時資訊 */
         body.preview-mode .outer-ring, body.preview-mode #gridLines, body.preview-mode #activeSector,
         body.preview-mode #hourMarkers, body.preview-mode #innerHourMarkers, body.preview-mode #orbitConnectors,
         body.preview-mode #hourOrbit, body.preview-mode #timeLink, body.preview-mode #secondProgress,
@@ -46,25 +48,47 @@
         .center-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; pointer-events: none; width: 65%; transition: var(--trans); }
         .big-branch { font-size: clamp(32px, 14vmin, 75px); color: var(--green); filter: var(--glow); line-height: 1; margin-bottom: 12px; }
         
+        /* states Isolated: Date input only in preview mode */
         .date-row { font-size: clamp(12px, 3.2vmin, 18px); margin: 6px 0; opacity: 0.9; letter-spacing: 1px; pointer-events: none; }
         body.preview-mode .date-row { pointer-events: auto; cursor: cell; color: var(--green); text-decoration: underline; text-underline-offset: 4px; }
         
-        .time-row { font-family: monospace; font-size: clamp(18px, 4.5vmin, 24px); font-weight: bold; margin: 6px 0; letter-spacing: 1px; }
+        .time-row { font-family: monospace; font-size: clamp(18px, 4.5vmin, 26px); font-weight: bold; margin: 6px 0; letter-spacing: 1px; }
         .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.5vmin, 20px); font-weight: bold; margin: 6px 0; }
         #st { font-weight:bold; margin-top:10px; font-size: clamp(16px, 4vmin, 22px); }
         
+        /* V7.9：凝練佈局容器 (間距縮小50%) */
         .footer-container { display: flex; align-items: center; gap: 20px; margin-top: 25px; transition: var(--trans); z-index: 20; }
-        .lunar-footer { padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 20px); letter-spacing: 2px; text-align: center; min-width: 180px; user-select: none; cursor: pointer; }
+        .lunar-footer { 
+            padding: 10px 30px; border: 1.5px solid var(--gold); border-radius: 30px; 
+            background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 20px); 
+            letter-spacing: 2px; text-align: center; min-width: 180px; user-select: none; cursor: pointer;
+        }
         
-        .nav-moon { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: var(--trans); opacity: 0.4; position: relative; overflow: hidden; }
+        /* V8.0 重構：飽滿、精確的半月造型 (線性漸變) */
+        .nav-moon {
+            width: 35px; height: 35px; border-radius: 50%; 
+            cursor: pointer; transition: var(--trans); opacity: 0.4; position: relative;
+            overflow: hidden; /* 裁剪漸變 */
+        }
+        /* 擴大點擊感應區 */
+        .nav-moon::after { content: ''; position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; overflow: visible; }
         .nav-moon:hover { opacity: 1; }
-        .nav-prev { background: linear-gradient(to right, var(--gold) 50%, transparent 50%); }
-        .nav-next { background: linear-gradient(to right, transparent 50%, var(--gold) 50%); }
+        
+        /* 下弦月 (左)：露出左側金黃色，相位飽滿，對稱 */
+        .nav-prev { 
+            background: linear-gradient(to right, var(--gold) 50%, transparent 50%);
+        }
+        
+        /* 上弦月 (右)：露出右側金黃色，相位飽滿，對稱，精確對應 用戶圖片 (image_0.png) */
+        .nav-next { 
+            background: linear-gradient(to right, transparent 50%, var(--gold) 50%);
+        }
 
         .theme-switch { margin-top: 35px; display: flex; justify-content: center; width: 100%; transition: var(--trans); z-index: 20; position: relative; }
         .btn-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--gold); background: #0f0e0c; cursor: pointer; transition: var(--trans); opacity: 0.5; }
         body.light-theme .btn-toggle { background: #f1e7d0; border-width: 4px; }
 
+        /* 向心線樣式 (權重在 JS 硬編碼) */
         #hourHandLine, #minHandLine { stroke: var(--red); stroke-linecap: round; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         body.minimal-mode:not(.preview-mode) #hourHandLine, body.minimal-mode:not(.preview-mode) #minHandLine { opacity: 0.5 !important; }
         body.light-theme #hourHandLine, body.light-theme #minHandLine { stroke: var(--gold); }
@@ -78,6 +102,7 @@
         body.minimal-mode #innerHourMarkers { opacity: 1; visibility: visible; }
         body.minimal-mode #orbitConnectors { opacity: 0.3; visibility: visible; }
         
+        /* 移除坐標上的 transition 確保流暢 */
         #redHourDot, #redMinDot, #greenDot { transition: opacity 0.5s; }
     </style>
 </head>
@@ -116,9 +141,9 @@
 </div>
 
 <div class="footer-container">
-    <div class="nav-moon nav-prev" onclick="shiftDate(event, -1)"></div>
-    <div class="lunar-footer" id="lf" onclick="shiftDate(event, 0)">--</div>
-    <div class="nav-moon nav-next" onclick="shiftDate(event, 1)"></div>
+    <div class="nav-moon nav-prev" onclick="shiftDate(event, -1)" title="後退一天"></div>
+    <div class="lunar-footer" id="lf" onclick="shiftDate(event, 0)" title="按一下回歸今日">--</div>
+    <div class="nav-moon nav-next" onclick="shiftDate(event, 1)" title="前進一天"></div>
 </div>
 
 <div class="theme-switch">
@@ -126,7 +151,7 @@
 </div>
 
 <script>
-    // PWA Service Worker 註冊
+    // PWA Service Worker 註冊 (V9.2 本地離線快取修復)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW fail', err));
@@ -135,32 +160,50 @@
 
     let offsetDays = 0, resetTimer = null;
 
+    // States Isolated: 僅在導覽模式中有效
     function manualDateInput(e) {
-        if (offsetDays === 0) return; 
+        if (offsetDays === 0) return; // 實時模式下不理會點擊，防止觸發極簡
         if (e) e.stopPropagation(); 
-        const current = new Date(); current.setHours(0,0,0,0);
-        const display = new Date(); display.setDate(current.getDate() + offsetDays);
-        const input = prompt("跳轉日期 (YYYY-MM-DD):", display.toISOString().split('T')[0]);
+        
+        const current = new Date();
+        current.setHours(0,0,0,0);
+        const display = new Date();
+        display.setDate(current.getDate() + offsetDays);
+        
+        const defaultVal = display.toISOString().split('T')[0];
+        const input = prompt("請輸入跳轉日期 (格式: YYYY-MM-DD):", defaultVal);
+        
         if (input) {
             const target = new Date(input);
             if (!isNaN(target.getTime())) {
-                const targetMid = new Date(target).setHours(0,0,0,0);
-                offsetDays = Math.round((targetMid - current.getTime()) / (1000 * 60 * 60 * 24));
-                shiftDate(null, 0); 
-            } else { alert("格式錯誤"); }
+                const targetMidnight = new Date(target).setHours(0,0,0,0);
+                offsetDays = Math.round((targetMidnight - current.getTime()) / (1000 * 60 * 60 * 24));
+                shiftDate(null, 0); // 利用 shiftDate 的重置計時器邏輯
+            } else {
+                alert("格式錯誤");
+            }
         }
     }
 
     function shiftDate(e, n) {
         if(e) e.stopPropagation(); 
         clearTimeout(resetTimer);
-        if (n === 0 && e && e.currentTarget.id === 'lf') { offsetDays = 0; } 
-        else { offsetDays += n; }
+        
+        if (n === 0 && e && e.currentTarget.id === 'lf') {
+            // 強制重置模式
+            offsetDays = 0;
+        } else {
+            offsetDays += n;
+        }
+        
         if (offsetDays !== 0) {
             resetTimer = setTimeout(() => {
-                offsetDays = 0; document.body.classList.remove('preview-mode'); update();
-            }, 10000); 
+                offsetDays = 0;
+                document.body.classList.remove('preview-mode');
+                update();
+            }, 10000); // 10秒自動歸位
         }
+        
         document.body.classList.toggle('preview-mode', offsetDays !== 0);
         update(); 
     }
@@ -172,6 +215,7 @@
     }
     if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
 
+    // States Isolated: 導覽模式下鎖定完全模式
     function toggleMinimal() {
         if (offsetDays !== 0) return; 
         if (event && event.target.closest('.theme-switch, .footer-container')) return;
@@ -214,13 +258,15 @@
         const isMin = document.body.classList.contains('minimal-mode');
         const isPreview = (offsetDays !== 0);
 
+        // JieQi Boundary Fix, states check, Hand Line Weight Fix, and Local Asset handling
         if (typeof Lunar !== 'undefined' && typeof Solar !== 'undefined') {
             try {
                 const sObj = Solar.fromDate(displayDate);
                 const l = sObj.getLunar();
-                const yearAlias = ({'甲':'青','乙':'青','丙':'赤','丁':'赤','戊':'黃','己':'黃','庚':'白','辛':'白','壬':'黑','癸':'黑'}[l.getYearGanByLiChun()]||'') + ({'子':'鼠','丑':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'}[l.getYearZhiByLiChun()]||'');
+                const colorMap = {'甲':'青','乙':'青','丙':'赤','丁':'赤','戊':'黃','己':'黃','庚':'白','辛':'白','壬':'黑','癸':'黑'};
+                const animalMap = {'子':'鼠','丑':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'};
+                const yearAlias = (colorMap[l.getYearGanByLiChun()]||'') + (animalMap[l.getYearZhiByLiChun()]||'');
                 document.getElementById('cd').innerText = `${displayDate.getFullYear()}年${displayDate.getMonth()+1}月${displayDate.getDate()}日`;
-                document.getElementById('cd').style.pointerEvents = isPreview ? "auto" : "none";
                 document.getElementById('cg').innerText = `${l.getYearInGanZhi()}年 ${l.getMonthInGanZhi()}月 ${l.getDayInGanZhi()}日`;
                 document.getElementById('st').innerText = l.getJieQi() || l.getPrevJieQi().getName();
                 document.getElementById('lf').innerText = `${yearAlias}年 ${l.getMonthInChinese()}月 ${l.getDayInChinese()}`;
@@ -240,6 +286,7 @@
         document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
         document.getElementById('greenDot').setAttribute("cx", polarToCartesian(230, deg24).x); document.getElementById('greenDot').setAttribute("cy", polarToCartesian(230, deg24).y);
         
+        // JS 驅動線條權重
         document.getElementById('hourHandLine').setAttribute("x2", ph.x); document.getElementById('hourHandLine').setAttribute("y2", ph.y);
         document.getElementById('hourHandLine').setAttribute("stroke-width", 6);
         document.getElementById('minHandLine').setAttribute("x2", pm.x); document.getElementById('minHandLine').setAttribute("y2", pm.y);
