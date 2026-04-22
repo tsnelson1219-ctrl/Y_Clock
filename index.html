@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="manifest" href="./manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="./icon.png">
-    <script src="./lunar.min.js" onerror="alert('曆法庫載入失敗，請確認檔案位置或清除快取')"></script>
+    
+    <script src="lunar.min.js?v=9.5" onerror="console.error('JS Load Failed')"></script>
+    
     <title>子午流注-合於日月</title>
     <style>
         :root {
@@ -21,17 +23,8 @@
             --grid: rgba(60, 60, 60, 0.25); --glow: none;
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
-        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #gridLines, body.minimal-mode #activeSector { 
-            opacity: 0 !important; visibility: hidden !important; 
-        }
-        body.preview-mode .outer-ring, body.preview-mode #gridLines, body.preview-mode #activeSector,
-        body.preview-mode #hourMarkers, body.preview-mode #innerHourMarkers, body.preview-mode #orbitConnectors,
-        body.preview-mode #hourOrbit, body.preview-mode #timeLink, body.preview-mode #secondProgress,
-        body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot,
-        body.preview-mode #hourHandLine, body.preview-mode #minHandLine,
-        body.preview-mode #cb, body.preview-mode #ct
-        { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
-
+        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #gridLines, body.minimal-mode #activeSector { opacity: 0 !important; visibility: hidden !important; }
+        body.preview-mode .outer-ring, body.preview-mode #gridLines, body.preview-mode #activeSector, body.preview-mode #hourMarkers, body.preview-mode #innerHourMarkers, body.preview-mode #orbitConnectors, body.preview-mode #hourOrbit, body.preview-mode #timeLink, body.preview-mode #secondProgress, body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot, body.preview-mode #hourHandLine, body.preview-mode #minHandLine, body.preview-mode #cb, body.preview-mode #ct { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
         body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; transition: var(--trans); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; overflow: hidden; }
         .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; }
         svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -50,7 +43,6 @@
         .theme-switch { margin-top: 35px; display: flex; justify-content: center; width: 100%; transition: var(--trans); z-index: 20; position: relative; }
         .btn-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--gold); background: #0f0e0c; cursor: pointer; transition: var(--trans); opacity: 0.5; }
         body.light-theme .btn-toggle { background: #f1e7d0; border-width: 4px; }
-
         #hourHandLine, #minHandLine { stroke: var(--red); stroke-linecap: round; opacity: 0; transition: opacity 0.5s; pointer-events: none; }
         body.minimal-mode:not(.preview-mode) #hourHandLine, body.minimal-mode:not(.preview-mode) #minHandLine { opacity: 0.5 !important; }
         body.light-theme #hourHandLine, body.light-theme #minHandLine { stroke: var(--gold); }
@@ -98,7 +90,7 @@
 
 <script>
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); });
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js?v=9.5'); });
     }
 
     let offsetDays = 0, resetTimer = null;
@@ -190,7 +182,6 @@
         document.getElementById('redMinDot').setAttribute("cx", pm.x); document.getElementById('redMinDot').setAttribute("cy", pm.y);
         document.getElementById('greenDot').setAttribute("cx", polarToCartesian(230, deg24).x); document.getElementById('greenDot').setAttribute("cy", polarToCartesian(230, deg24).y);
         
-        // V9.4 JS 強力權重鎖定
         const hL = document.getElementById('hourHandLine'), mL = document.getElementById('minHandLine');
         hL.setAttribute("x2", ph.x); hL.setAttribute("y2", ph.y); hL.setAttribute("stroke-width", "6");
         mL.setAttribute("x2", pm.x); mL.setAttribute("y2", pm.y); mL.setAttribute("stroke-width", "4");
