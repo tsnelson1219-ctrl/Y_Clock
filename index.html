@@ -17,11 +17,8 @@
             --stagger: 0.015s;
         }
 
-        /* 全局移除行動端點擊反白效果 */
-        * {
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none; /* 禁用長按選單 */
-        }
+        /* 移除點擊反白 */
+        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
 
         body.light-theme {
             --bg: #f1e7d0; --gold: #5d4037; --green: #2e5a4b; --red: #a93226;
@@ -29,17 +26,17 @@
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
 
+        /* 外圈序列項 */
         .stagger-item { transition: opacity 0.2s ease-in-out; opacity: 1; }
         body.minimal-mode .stagger-item { opacity: 0; transition-delay: calc((11 - var(--i)) * var(--stagger)); }
         body:not(.minimal-mode) .stagger-item { transition-delay: calc(var(--i) * var(--stagger)); }
 
+        /* 內圈互補項 */
         .persistent-item { transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
         body.minimal-mode .persistent-item { opacity: 0.8; pointer-events: auto; }
 
         .outer-ring, .center-display, .footer-container, #activeSector, #greenDot { transition: opacity 0.4s ease; opacity: 1; }
-        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #activeSector, body.minimal-mode #greenDot { 
-            opacity: 0 !important; visibility: hidden; 
-        }
+        body.minimal-mode .outer-ring, body.minimal-mode .center-display, body.minimal-mode .footer-container, body.minimal-mode #activeSector, body.minimal-mode #greenDot { opacity: 0 !important; visibility: hidden; }
 
         body.preview-mode .outer-ring, body.preview-mode .zhi-segment, body.preview-mode #activeSector, body.preview-mode #hourHandLine, body.preview-mode #minHandLine, body.preview-mode #cb, body.preview-mode #ct, body.preview-mode #timeLink, body.preview-mode #secondProgress, body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
         
@@ -55,14 +52,11 @@
         .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.5vmin, 20px); font-weight: bold; margin: 2px 0; }
         #st { font-weight:bold; margin-top: 5px; font-size: clamp(16px, 4vmin, 22px); }
         
-        /* 導覽鍵佈局優化：收緊間距 */
         .footer-container { display: flex; align-items: center; gap: 12px; margin-top: 25px; z-index: 20; user-select: none; }
         .lunar-footer { padding: 10px 24px; border: 1.5px solid var(--gold); border-radius: 30px; background: rgba(139, 107, 61, 0.05); font-size: clamp(14px, 3.6vmin, 19px); letter-spacing: 2px; text-align: center; min-width: 160px; cursor: pointer; }
-        
         .nav-moon { width: 35px; height: 35px; border-radius: 50%; cursor: pointer; transition: var(--trans); opacity: 0.4; position: relative; overflow: hidden; }
         .nav-prev { background: linear-gradient(to right, var(--gold) 50%, transparent 50%); }
         .nav-next { background: linear-gradient(to right, transparent 50%, var(--gold) 50%); }
-        
         .theme-switch { margin-top: 35px; display: flex; justify-content: center; width: 100%; z-index: 20; position: relative; }
         .btn-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2.5px solid var(--gold); background: #0f0e0c; cursor: pointer; transition: var(--trans); opacity: 0.5; }
         body.light-theme .btn-toggle { background: #f1e7d0; border-width: 4px; }
@@ -153,20 +147,27 @@
             g.setAttribute("class", "zhi-segment");
             g.setAttribute("style", `--i: ${i}`);
             const p120 = polarToCartesian(120, deg), p90 = polarToCartesian(90, deg);
+            
+            // 外圈點：統一規格為 1.5px
             const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            m.setAttribute("cx", p120.x); m.setAttribute("cy", p120.y); m.setAttribute("r", "2.8"); m.setAttribute("fill", "var(--gold)");
+            m.setAttribute("cx", p120.x); m.setAttribute("cy", p120.y); m.setAttribute("r", "1.5"); m.setAttribute("fill", "var(--gold)");
             m.setAttribute("class", "stagger-item"); g.appendChild(m);
+            
+            // 內圈點：統一規格為 1.5px
             const im = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            im.setAttribute("cx", p90.x); im.setAttribute("cy", p90.y); im.setAttribute("r", "1.6"); im.setAttribute("fill", "var(--gold)");
+            im.setAttribute("cx", p90.x); im.setAttribute("cy", p90.y); im.setAttribute("r", "1.5"); im.setAttribute("fill", "var(--gold)");
             im.setAttribute("class", "persistent-item"); g.appendChild(im);
+            
             const conn = document.createElementNS("http://www.w3.org/2000/svg", "line");
             conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y);
             conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5");
             conn.setAttribute("class", "persistent-item"); g.appendChild(conn);
+            
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             const pG1 = polarToCartesian(120, deg - 15), pG2 = polarToCartesian(230, deg - 15);
             line.setAttribute("x1", pG1.x); line.setAttribute("y1", pG1.y); line.setAttribute("x2", pG2.x); line.setAttribute("y2", pG2.y);
             line.setAttribute("stroke", "var(--grid)"); line.setAttribute("class", "stagger-item"); g.appendChild(line);
+            
             const po = polarToCartesian(205, deg), pb = polarToCartesian(150, deg);
             const tO = document.createElementNS("http://www.w3.org/2000/svg", "text");
             tO.setAttribute("x", po.x); tO.setAttribute("y", po.y); tO.setAttribute("fill", "var(--green)"); tO.setAttribute("font-size", "16"); tO.setAttribute("font-weight", "bold"); tO.setAttribute("text-anchor", "middle"); tO.setAttribute("dominant-baseline", "middle"); tO.setAttribute("class", "stagger-item"); tO.textContent = item.o; g.appendChild(tO);
@@ -185,7 +186,7 @@
             try {
                 const sObj = Solar.fromDate(displayDate); const l = sObj.getLunar();
                 const colorMap = {'甲':'青','乙':'青','丙':'赤','丁':'赤','戊':'黃','己':'黃','庚':'白','辛':'白','壬':'黑','癸':'黑'};
-                const animalMap = {'子':'鼠','丑裝':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'};
+                const animalMap = {'子':'鼠','丑':'牛','寅':'虎','卯':'兔','辰':'龍','巳':'蛇','午':'馬','未':'羊','申':'猴','酉':'雞','戌':'狗','亥':'豬'};
                 const yA = (colorMap[l.getYearGanByLiChun()]||'') + (animalMap[l.getYearZhiByLiChun()]||'');
                 document.getElementById('cd').innerText = `${displayDate.getFullYear()}年${displayDate.getMonth()+1}月${displayDate.getDate()}日`;
                 document.getElementById('cg').innerText = `${l.getYearInGanZhi()}年 ${l.getMonthInGanZhi()}月 ${l.getDayInGanZhi()}日`;
