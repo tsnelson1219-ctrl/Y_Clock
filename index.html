@@ -1,4 +1,4 @@
-<!-- Version: 9.4 | Title: 子午流注-合於日月 | Update: Unlock Text Selection & Event Propagation Fix -->
+<!-- Version: 9.5 | Title: 子午流注-合於日月 | Update: Restore Native Text Selection (user-select: text) -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -39,20 +39,19 @@
         body.preview-mode .outer-ring, body.preview-mode .zhi-segment, body.preview-mode #activeSector, body.preview-mode #hourHandLine, body.preview-mode #minHandLine, body.preview-mode #cb, body.preview-mode #ct, body.preview-mode #timeLink, body.preview-mode #secondProgress, body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
         
         body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; transition: var(--trans); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; overflow: hidden; }
-        .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; }
+        .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; user-select: none; }
         svg { width: 100%; height: 100%; display: block; overflow: visible; }
         
-        /* 核心修正：解鎖點擊與選取 */
         .center-display { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
             text-align: center; z-index: 10; width: 65%;
-            pointer-events: auto; /* 允許響應事件 */
+            pointer-events: auto; 
         }
         
-        /* 允許特定文字選取 */
+        /* 核心修正：恢復原生的手動拖拉選取行為 */
         .big-branch, .date-row, .time-row, .ganzhi-row, #st {
-            user-select: all; /* 長按全選，方便複製 */
-            -webkit-user-select: all;
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         .big-branch { font-size: clamp(32px, 12vmin, 60px); color: var(--green); filter: var(--glow); line-height: 1; margin-bottom: 4px; }
@@ -96,7 +95,6 @@
         <circle id="greenDot" r="5.5" fill="var(--green)" />
         <circle id="redHourDot" r="6" fill="var(--red)" /><circle id="redMinDot" r="4" fill="var(--red)" opacity="0.8" />
     </svg>
-    <!-- 中央區塊點擊也會冒泡到 toggleMinimal -->
     <div class="center-display">
         <div class="big-branch" id="cb">--</div>
         <div class="date-row" id="cd" onclick="manualDateInput(event)">--</div>
@@ -141,7 +139,7 @@
 
     function toggleMinimal(e) {
         if (offsetDays !== 0) return; 
-        // 防止在選取文字時意外切換（簡單判定：如果有選取內容就不切換）
+        // 攔截：如果當前有選取的文字範圍，則不觸發極簡模式切換
         if (window.getSelection().toString()) return;
         if (e && e.target.closest('.theme-switch, .footer-container')) return;
         document.body.classList.toggle('minimal-mode'); 
