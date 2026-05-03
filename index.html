@@ -1,3 +1,4 @@
+<!-- Version: 9.4 | Title: 子午流注-合於日月 | Update: Unlock Text Selection & Event Propagation Fix -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -17,8 +18,7 @@
             --stagger: 0.015s;
         }
 
-        /* 移除點擊反白 */
-        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
+        * { -webkit-tap-highlight-color: transparent; }
 
         body.light-theme {
             --bg: #f1e7d0; --gold: #5d4037; --green: #2e5a4b; --red: #a93226;
@@ -26,12 +26,10 @@
             --center-glow: drop-shadow(0 0 15px rgba(139, 107, 61, 0.3));
         }
 
-        /* 外圈序列項 */
         .stagger-item { transition: opacity 0.2s ease-in-out; opacity: 1; }
         body.minimal-mode .stagger-item { opacity: 0; transition-delay: calc((11 - var(--i)) * var(--stagger)); }
         body:not(.minimal-mode) .stagger-item { transition-delay: calc(var(--i) * var(--stagger)); }
 
-        /* 內圈互補項 */
         .persistent-item { transition: opacity 0.3s ease; opacity: 0; pointer-events: none; }
         body.minimal-mode .persistent-item { opacity: 0.8; pointer-events: auto; }
 
@@ -41,13 +39,25 @@
         body.preview-mode .outer-ring, body.preview-mode .zhi-segment, body.preview-mode #activeSector, body.preview-mode #hourHandLine, body.preview-mode #minHandLine, body.preview-mode #cb, body.preview-mode #ct, body.preview-mode #timeLink, body.preview-mode #secondProgress, body.preview-mode #redHourDot, body.preview-mode #redMinDot, body.preview-mode #greenDot { opacity: 0 !important; visibility: hidden !important; pointer-events: none; }
         
         body { background: var(--bg); color: var(--gold); display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; transition: var(--trans); font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; overflow: hidden; }
-        .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; user-select: none; }
+        .clock-wrapper { position: relative; width: min(95vmin, 550px); height: min(95vmin, 550px); cursor: pointer; z-index: 5; transition: transform 0.2s; }
         svg { width: 100%; height: 100%; display: block; overflow: visible; }
         
-        .center-display { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; pointer-events: none; width: 65%; }
+        /* 核心修正：解鎖點擊與選取 */
+        .center-display { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            text-align: center; z-index: 10; width: 65%;
+            pointer-events: auto; /* 允許響應事件 */
+        }
+        
+        /* 允許特定文字選取 */
+        .big-branch, .date-row, .time-row, .ganzhi-row, #st {
+            user-select: all; /* 長按全選，方便複製 */
+            -webkit-user-select: all;
+        }
+
         .big-branch { font-size: clamp(32px, 12vmin, 60px); color: var(--green); filter: var(--glow); line-height: 1; margin-bottom: 4px; }
-        .date-row { font-size: clamp(12px, 3.2vmin, 18px); margin: 2px 0; opacity: 0.9; letter-spacing: 1px; pointer-events: none; }
-        body.preview-mode .date-row { pointer-events: auto; cursor: cell; color: var(--green); text-decoration: underline; text-underline-offset: 4px; }
+        .date-row { font-size: clamp(12px, 3.2vmin, 18px); margin: 2px 0; opacity: 0.9; letter-spacing: 1px; }
+        body.preview-mode .date-row { cursor: cell; color: var(--green); text-decoration: underline; text-underline-offset: 4px; }
         .time-row { font-family: monospace; font-size: clamp(18px, 4.5vmin, 24px); font-weight: bold; margin: 2px 0; letter-spacing: 1px; }
         .ganzhi-row { color: var(--green); font-size: clamp(12px, 3.5vmin, 20px); font-weight: bold; margin: 2px 0; }
         #st { font-weight:bold; margin-top: 5px; font-size: clamp(16px, 4vmin, 22px); }
@@ -72,7 +82,7 @@
     </style>
 </head>
 <body class="dark">
-<div class="clock-wrapper" onclick="toggleMinimal()">
+<div class="clock-wrapper" onclick="toggleMinimal(event)">
     <svg viewBox="0 0 500 500">
         <defs><radialGradient id="starGradient" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="white" /><stop offset="35%" stop-color="white" /><stop offset="100%" stop-color="var(--gold)" /></radialGradient></defs>
         <g class="outer-ring"><circle cx="250" cy="250" r="230" fill="none" stroke="var(--grid)" stroke-width="1"/><circle cx="250" cy="250" r="175" fill="none" stroke="var(--grid)" stroke-width="1.5"/></g>
@@ -86,6 +96,7 @@
         <circle id="greenDot" r="5.5" fill="var(--green)" />
         <circle id="redHourDot" r="6" fill="var(--red)" /><circle id="redMinDot" r="4" fill="var(--red)" opacity="0.8" />
     </svg>
+    <!-- 中央區塊點擊也會冒泡到 toggleMinimal -->
     <div class="center-display">
         <div class="big-branch" id="cb">--</div>
         <div class="date-row" id="cd" onclick="manualDateInput(event)">--</div>
@@ -127,11 +138,16 @@
     }
     function toggleTheme(e) { if(e) e.stopPropagation(); const isL = document.body.classList.toggle('light-theme'); localStorage.setItem('theme', isL ? 'light' : 'dark'); }
     if(localStorage.getItem('theme') === 'light') document.body.classList.add('light-theme');
-    function toggleMinimal() {
-        if (offsetDays !== 0) return; if (event && event.target.closest('.theme-switch, .footer-container')) return;
-        document.body.classList.toggle('minimal-mode'); localStorage.setItem('minimal', document.body.classList.contains('minimal-mode'));
+
+    function toggleMinimal(e) {
+        if (offsetDays !== 0) return; 
+        // 防止在選取文字時意外切換（簡單判定：如果有選取內容就不切換）
+        if (window.getSelection().toString()) return;
+        if (e && e.target.closest('.theme-switch, .footer-container')) return;
+        document.body.classList.toggle('minimal-mode'); 
+        localStorage.setItem('minimal', document.body.classList.contains('minimal-mode'));
     }
-    if(localStorage.getItem('minimal') === 'true') toggleMinimal();
+    if(localStorage.getItem('minimal') === 'true') document.body.classList.add('minimal-mode');
 
     const data = [{ b: "子", o: "膽" }, { b: "丑", o: "肝" }, { b: "寅", o: "肺" }, { b: "卯", o: "大腸" }, { b: "辰", o: "胃" }, { b: "巳", o: "脾" }, { b: "午", o: "心" }, { b: "未", o: "小腸" }, { b: "申", o: "膀胱" }, { b: "酉", o: "腎" }, { b: "戌", o: "心包" }, { b: "亥", o: "三焦" }];
     const CIRCUMFERENCE = 2 * Math.PI * 120;
@@ -147,27 +163,20 @@
             g.setAttribute("class", "zhi-segment");
             g.setAttribute("style", `--i: ${i}`);
             const p120 = polarToCartesian(120, deg), p90 = polarToCartesian(90, deg);
-            
-            // 外圈點：統一規格為 1.5px
             const m = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             m.setAttribute("cx", p120.x); m.setAttribute("cy", p120.y); m.setAttribute("r", "1.5"); m.setAttribute("fill", "var(--gold)");
             m.setAttribute("class", "stagger-item"); g.appendChild(m);
-            
-            // 內圈點：統一規格為 1.5px
             const im = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             im.setAttribute("cx", p90.x); im.setAttribute("cy", p90.y); im.setAttribute("r", "1.5"); im.setAttribute("fill", "var(--gold)");
             im.setAttribute("class", "persistent-item"); g.appendChild(im);
-            
             const conn = document.createElementNS("http://www.w3.org/2000/svg", "line");
             conn.setAttribute("x1", p90.x); conn.setAttribute("y1", p90.y); conn.setAttribute("x2", p120.x); conn.setAttribute("y2", p120.y);
             conn.setAttribute("stroke", "var(--gold)"); conn.setAttribute("stroke-width", "0.5");
             conn.setAttribute("class", "persistent-item"); g.appendChild(conn);
-            
             const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
             const pG1 = polarToCartesian(120, deg - 15), pG2 = polarToCartesian(230, deg - 15);
             line.setAttribute("x1", pG1.x); line.setAttribute("y1", pG1.y); line.setAttribute("x2", pG2.x); line.setAttribute("y2", pG2.y);
             line.setAttribute("stroke", "var(--grid)"); line.setAttribute("class", "stagger-item"); g.appendChild(line);
-            
             const po = polarToCartesian(205, deg), pb = polarToCartesian(150, deg);
             const tO = document.createElementNS("http://www.w3.org/2000/svg", "text");
             tO.setAttribute("x", po.x); tO.setAttribute("y", po.y); tO.setAttribute("fill", "var(--green)"); tO.setAttribute("font-size", "16"); tO.setAttribute("font-weight", "bold"); tO.setAttribute("text-anchor", "middle"); tO.setAttribute("dominant-baseline", "middle"); tO.setAttribute("class", "stagger-item"); tO.textContent = item.o; g.appendChild(tO);
